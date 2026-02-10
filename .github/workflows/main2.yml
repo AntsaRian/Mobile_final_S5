@@ -1,0 +1,71 @@
+name: 🚀 Build Ionic Vue APK - Windows Optimized
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: windows-latest  # <-- Spécifique Windows !
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🏗️ Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 📦 Install dependencies (Windows optimized)
+      run: |
+        # Force npm (évite les problèmes de lock file)
+        npm config set script-shell "C:\\Program Files\\Git\\bin\\bash.exe"
+        npm ci --legacy-peer-deps --no-audit
+        
+    - name: ⚡ Install Ionic & Capacitor globally
+      run: |
+        npm install -g @ionic/cli @capacitor/cli --force
+        
+    - name: 🏗️ Build Vue.js App
+      run: |
+        npm run build
+        
+    - name: 🤖 Add Android platform
+      run: |
+        npx cap add android --no-deps
+        
+    - name: 🔄 Sync Capacitor
+      run: |
+        npx cap sync android
+        
+    - name: ☕ Setup Java JDK 17 (Windows)
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'microsoft'
+        java-version: '17'
+        
+    - name: 🔨 Build APK Debug
+      run: |
+        cd android
+        .\gradlew.bat assembleDebug --info
+        
+    - name: 📤 Upload APK as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: mobile-app-debug
+        path: android/app/build/outputs/apk/debug/*.apk
+        retention-days: 7
+        
+    - name: 🎉 Build Success Notification
+      if: success()
+      run: |
+        echo "========================================"
+        echo "✅ BUILD RÉUSSI !"
+        echo "📱 APK généré avec succès"
+        echo "📥 Téléchargez-le dans 'Artifacts'"
+        echo "========================================"
