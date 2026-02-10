@@ -7,8 +7,6 @@ workflows:
     environment:
       android_signing:
         - keystore_reference
-      groups:
-        - google_credentials
       vars:
         PACKAGE_NAME: "com.finalS5Mobile.mobile"
         CAPACITOR_CLI_VERSION: "latest"
@@ -63,12 +61,7 @@ workflows:
     publishing:
       email:
         recipients:
-          - votre-email@example.com
+          - andrianina2antsa@gmail.com
         notify:
           success: true
           failure: true
-      
-      scripts:
-        - name: Publish APK
-          script: |
-            echo "APK généré avec succès!"
