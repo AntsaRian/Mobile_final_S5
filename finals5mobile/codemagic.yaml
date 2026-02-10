@@ -1,0 +1,74 @@
+workflows:
+  ionic-android-build:
+    name: Build APK Android
+    max_build_duration: 120
+    instance_type: linux_x2
+    
+    environment:
+      android_signing:
+        - keystore_reference
+      groups:
+        - google_credentials
+      vars:
+        PACKAGE_NAME: "com.finalS5Mobile.mobile"
+        CAPACITOR_CLI_VERSION: "latest"
+      node: 18
+      java: 17
+    
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: '*'
+          include: true
+    
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm ci
+      
+      - name: Install Ionic and Capacitor CLI
+        script: |
+          npm install -g @ionic/cli
+          npm install -g @capacitor/cli
+      
+      - name: Build web app
+        script: |
+          npm run build
+      
+      - name: Initialize Capacitor
+        script: |
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+      
+      - name: Sync Capacitor
+        script: |
+          npx cap sync android
+      
+      - name: Set up local.properties
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+      
+      - name: Build Android APK
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+    
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/mapping.txt
+    
+    publishing:
+      email:
+        recipients:
+          - votre-email@example.com
+        notify:
+          success: true
+          failure: true
+      
+      scripts:
+        - name: Publish APK
+          script: |
+            echo "APK généré avec succès!"
